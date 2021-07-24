@@ -2,31 +2,24 @@
 #include <fstream>
 #include <ncurses.h>
 #include <algorithm>
+#include <array>
+#include <unordered_map>
 
-#define TABS 2
 
 namespace MSQE
 {
-	void searchAndReplace(std::string& s, const char& a, const char& b, int amtOfTimes)
-	{
-		for(int i = 0; i < s.size(); i++)
-			if (s[i] == a)
-			{
-				s.erase(s.begin()+i);
-				s.insert(s.begin()+i, amtOfTimes, b);
-			}
-	}
+	std::unordered_map<std::string, int> cppIdentifiers;
 
 	Editor::Editor()
 	:_shouldClose(false), _currentBuffer(0)
 	{
-		
 		initscr();
+		start_color();
 		cbreak();
 		noecho();
 		notimeout(stdscr, false);
 		keypad(stdscr, TRUE);
-		for(int col = 0; col <= COLOR_WHITE; col++)
+		for(int col = 1; col <= COLOR_WHITE; col++)
 			init_pair(col, col, COLOR_BLACK); // initialize all color pairs without any background
 	}
 
@@ -113,6 +106,7 @@ namespace MSQE
 	{
 		Buffer b;
 		b.open(file);
+		b.processText();
 		_buffers.push_back(b);
 	}
 
@@ -133,13 +127,19 @@ namespace MSQE
 		{
 			if (currentlyDrawing < currentBuffer.getLines().size())
 			{
-				std::string lineToDraw = std::string(currentBuffer.getLines()[currentlyDrawing]);
-				searchAndReplace(lineToDraw, '\t', ' ', TABS);
-				printw("%u\t %s\n", currentlyDrawing, lineToDraw.c_str());
+				std::vector<ColoredChar> lineToDraw = currentBuffer.getProcessedLines()[currentlyDrawing];
+				printw("%u\t", currentlyDrawing);
+				for (int j = 0; j < lineToDraw.size(); j++)
+				{
+					attron(COLOR_PAIR(lineToDraw[j].col));
+					addch(lineToDraw[j].c);
+					attroff(COLOR_PAIR(lineToDraw[j].col));
+				}
 				currentlyDrawing++;
+				addch('\n');
 			}
 		}
-		int position = currentBuffer.getCol() + 9;
+		int position = currentBuffer.getCol() + 8;
 		for(int i = 0; i < currentBuffer.getCol(); i++)
 			if(currentBuffer.getLines()[currentBuffer.getRow()][i] == '\t')
 				position += TABS - 1;

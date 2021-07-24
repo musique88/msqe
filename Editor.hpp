@@ -5,7 +5,6 @@
 
 namespace MSQE
 {
-
 	class Editor
 	{
 		std::vector<Buffer> _buffers;
